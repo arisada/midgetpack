@@ -1,0 +1,125 @@
+  Midgetpack
+  ~-~-~-~-~-
+    aris@badcode.be
+  
+  Table of contents:
+  
+1- What is Midgetpack
+2- Features
+3- Use
+4- Shortcomings
+5- Installation
+
+***********************************************************
+
+1- What is Midgetpack
+
+ Midgetpack is a binary packer for ELF binaries, such as burneye, upx or 
+ other tools. Its goal is to protect your assets (tools, exploits) when using
+ them on untrusted systems (e.g on a monitored customer's system during a
+ pentest).
+ Midgetpack contains two modes of operation: password and curve25519 key exchange.
+ 
+ The password mode is the classical password that is asked when starting the
+ binary. I believe the binary to be secure against cracking if you choose a
+ strong password, but once someone has both binary and password he can do whatever
+ he wants.
+ 
+ The curve25519 is the real advantage of midgetpack. In this mode, you do not
+ provide any password or key. Instead, a key file is generated at packing time.
+ This key file must be used everytime you wish to use the binary. When you start
+ the binary, it will give a challenge and expect a response. You copy/paste the
+ challenge in the input of the mpkex tool and receive a response containing the
+ encrypted key to the binary.
+ This key exchange is protected by Curve25519 key exchange, the key is encrypted
+ with aes-128 and the whole exchange is authenticated with HMAC-SHA256 to avoid
+ generic man-in-the-middle attacks.
+ This mode is truly secure as eavesdropping the terminal will *not* be enough to
+ recover the key or the unprotected binary.
+ 
+2- Features
+
+ Midgetpack is able to pack binaries in different architectures using the same
+ executable. This makes possible to pack an x86 binary on an amd64 one.
+ 
+ Currently Linux and freebsd are supported.
+ CPU supported: x86-32, x86-64, arm
+ 
+ Encryption: 
+  - Password (PBKCS2, AES128-cbc, HMAC-SHA256)
+  - curve25519 (Curve25519 kex, AES128-cbc, HMAC-SHA256)
+  
+3- Use
+ As stated above, there are 2 different operation modes: password and curve25519.
+ 
+ - Password:
+   $ ./midgetpack -o binary -p src/tests/test32-dynamic 
+   x86 ELF file
+   Adding new pheader with vaddr base badd000, offset 0 of filesz 5eca
+   Please enter password:
+   Enter the password again:
+   $ chmod +x binary 
+   $ ./binary 
+   starting stub...
+   Password: 
+   Hello, world !
+ 
+ - Curve25519
+   $ ./midgetpack -o binary -c src/tests/test32-dynamic
+   x86 ELF file
+   Adding new pheader with vaddr base badd000, offset 0 of filesz 5eca
+   Key data written in file key
+   
+   Then, two consoles are needed:
+ 
+ $ ./binary                            | $ src/packer/mpkex key 
+starting stub...                       | Waiting for challenge...
+challenge:                             |
+ZABpaSpiAkNzJTFKkiE3S7mW-vC7YrcBainilU |
+1yScpWEWZB9epppJHeicqd9wj4             |
+                                       | ZABpaSpiAkNzJTFKkiE3S7mW-vC7YrcBainilU
+                                       | 1yScpWEWZB9epppJHeicqd9wj4
+                                       | Response:
+                                       | jvDFJApVgXUASz-7hLj_2BJ40ppY0EsJ9GOsM-f
+                                       | 7pkBVFsu6cnV4XWBSO5nz82lVopPJJ5PRy7Pi-l
+                                       | urGgtPDDAA
+jvDFJApVgXUASz-7hLj_2BJ40ppY0EsJ9GOsM- | $ 
+f7pkBVFsu6cnV4XWBSO5nz82lVopPJJ5PRy7Pi |
+-lurGgtPDDAA                           |
+Hello, world !                         |
+
+4- Shortcomings
+
+ The password version of midgetpack is not very secure. The password is currently
+ echoed back so it appears in cleartext on honeypots. However it may be enough when
+ there's good confidence that the system is not monitored.
+ 
+ The Curve25519 version is stronger, but is subject to replay attacks if the PRNG
+ can be forced to replay same numbers. To do so, an attacker would need to hook
+ /dev/urandom, the rdtsc instruction and the ELF Aux vector on the first run
+ to force output of the same numbers.
+ 
+ The Curve25519 version is also vulnerable to some active man-in-the middle attacks
+ in which an attacker would need to extract the HMAC key from the binary and dynamically
+ replace the binary's challenge with its own.
+ 
+ Both these attacks are unlikely to be seen in the wild.
+ 
+ Both versions are vulnerable to snapshots attacks, in which a snapshot of the VM or
+ the running process is taken in order to analyse the cleartext version of the binary.
+ Reducing the impact of these attacks may be a target for next versions.
+ 
+5- Installation
+
+ Requirements:
+ - cmake
+ - C compiler (tested with gcc, may fail on clang)
+
+ $ mkdir build/
+ $ cd build/
+ $ cmake ..
+  (note: cmake .. -DWITH_PRECOMPILED_STUBS if you don't want any binary blob)
+ $ make
+ $ src/packer/midgetpack -o packed -P mypassword src/tests/test32-dynamic
+ $ ./packed
+
