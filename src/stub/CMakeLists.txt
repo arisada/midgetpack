@@ -111,12 +111,12 @@ endfunction(ADD_PRECOMPILED)
 If(CCOMPILER_32)
 	compile_arch_lib("x86" "-m32 -DARCH_X86")
 	compile_arch_os("linux" "x86" "-m32 -DARCH_X86" 
-		"-Ai386:intel --oformat elf32-i386 -m ${MACHINE_X86} -Ttext=0xbadc0e4 -Tdata=0xbafb450"
+		"-Ai386:intel --oformat elf32-i386 -m ${MACHINE_X86} -Ttext=0xbadc0f4 -Tdata=0xbafb450"
 		"--32"
 		""
 	)
 	compile_arch_os("freebsd" "x86" "-m32 -DARCH_X86" 
-		"-Ai386:intel --oformat elf32-i386 -m ${MACHINE_X86} -Ttext=0xbadc0e4 -Tdata=0xbafb450"
+		"-Ai386:intel --oformat elf32-i386 -m ${MACHINE_X86} -Ttext=0xbadc0f4 -Tdata=0xbafb450"
 		"--32"
 		""
 	)

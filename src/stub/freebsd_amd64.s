@@ -31,6 +31,7 @@
 .globl exit
 .globl munmap
 .globl getpid
+.globl ioctl
 .globl get_os
 
 .text
@@ -83,6 +84,10 @@ getpid:
 	mov $20, %rax #sys_getpid
 	syscall
 	ret
+
+ioctl:
+	mov $54, %rax
+	jmp syscall3
 
 get_os:
 	mov $2, %rax

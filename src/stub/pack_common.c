@@ -194,16 +194,24 @@ end:
 }
 
 static int MP_MAP_ANON=0;
-
+static int IO_SET=0;
+static int IO_GET=0;
+static int ECHO=0;
 /* some constants have different values depending on OS */
 static void init_constants(void){
 	enum os_e os = get_os();
 	switch(os){
 	case OS_LINUX:
 		MP_MAP_ANON = 0x20;
+		IO_GET = TCGETS;
+		IO_SET = TCSETS;
+		ECHO = LINUX_ECHO;
 		break;
 	case OS_FREEBSD:
 		MP_MAP_ANON = 0x1000;
+		IO_GET = TIOCGETA;
+		IO_SET = TIOCSETA;
+		ECHO = FREEBSD_ECHO;
 		break;
 	default:
 		break;
@@ -529,19 +537,30 @@ static void decrypt_payload(void *payload, size_t len, uint8_t encryptkey[16],
 static void ask_password(char *pwd, size_t len){
 	size_t i;
 	int rc;
+	struct termios term;
 	myprintf("Password: ");
+	ioctl(0, IO_GET, &term);
+	term.c_lflag &= ~ECHO;
+	ioctl(0, IO_SET, &term);
+	
 	for(i=0;i<len;++i){
 		rc = read(0, &pwd[i], 1);
 		if (rc < 0){
 			pwd[i]='\0';
-			return;
+			goto end;
 		}
 		if(pwd[i]=='\n' || pwd[i]=='\r'){
 			pwd[i]='\0';
-			return;
+			goto end;
 		}
 	}
 	pwd[len-1]='\0';
+	end:
+	ioctl(0, IO_GET, &term);
+	term.c_lflag |= ECHO;
+	ioctl(0, IO_SET, &term);
+	myprintf("\n");
+
 	return;
 }
 #ifdef CRYPTO_DEBUG

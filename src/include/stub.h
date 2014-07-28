@@ -78,3 +78,29 @@ typedef struct stub_data_64 stub_data;
 #endif
 
 #endif
+
+/* Linux */
+#define TCGETS 0x5401
+#define TCSETS 0x5402
+/* FreeBSD */
+#define TIOCGETA 0x402c7413
+#define TIOCSETA 0x802c7414
+typedef unsigned char   cc_t;
+typedef unsigned int    speed_t;
+typedef unsigned int    tcflag_t;
+
+#define NCCS 19
+struct termios {
+        tcflag_t c_iflag;               /* input mode flags */
+        tcflag_t c_oflag;               /* output mode flags */
+        tcflag_t c_cflag;               /* control mode flags */
+        tcflag_t c_lflag;               /* local mode flags */
+        cc_t c_line;                    /* line discipline */
+        cc_t c_cc[NCCS];                /* control characters */
+	    speed_t     c_ispeed;   /* input speed */
+    	speed_t     c_ospeed;   /* output speed */
+};
+
+#define LINUX_ECHO 0x08
+#define FREEBSD_ECHO 0x08
+int ioctl(int fd, int code, void *param);

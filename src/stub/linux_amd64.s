@@ -32,6 +32,7 @@
 .globl munmap
 .globl getpid
 .globl get_os
+.globl ioctl
 
 .text
 # syscalls conventions
@@ -83,6 +84,9 @@ getpid:
 	mov $39, %rax #sys_getpid
 	syscall
 	ret
+ioctl:
+	mov $16, %rax #sys_ioctl
+	jmp syscall3
 
 get_os:
 	mov $1, %rax

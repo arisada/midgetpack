@@ -32,6 +32,7 @@
 .globl munmap
 .globl getpid
 .globl get_os
+.globl ioctl
 
 .text
 mmap:
@@ -102,4 +103,6 @@ getpid:
 get_os:
 	mov $2, %eax
 	ret
-
+ioctl:
+	mov $54, %eax
+	jmp syscall
